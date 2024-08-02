@@ -1,0 +1,23 @@
+#include <stdio.h>
+#include <stdint.h>
+typedef union {
+    float f;
+    uint32_t i;
+} FloatUnion;
+void print_binary(uint32_t num) {
+    for (int i = 31; i >= 0; i--) {
+        printf("%d", (num >> i) & 1);
+        if (i % 8 == 0) printf(" "); // Add space every byte for readability
+    }
+    printf("\n");
+}
+int main() {
+    FloatUnion u;
+    float number;
+    printf("Enter a floating-point number: ");
+    scanf("%f", &number);
+    u.f = number;
+    printf("Single Precision of %f:\n", number);
+    print_binary(u.i);
+	return 0;
+}
