@@ -1,0 +1,109 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#define NUM_INSTRUCTIONS 5
+typedef struct {
+    int op1;
+    int op2;
+    char operation;
+} Instruction;
+typedef struct {
+    int pc;
+    int valid;
+} FetchStage;
+typedef struct {
+    int op1;
+    int op2;
+    char operation;
+    int valid;
+} DecodeStage;
+typedef struct {
+    int result;
+    int valid;
+} ExecuteStage;
+typedef struct {
+    int result;
+    int valid;
+} WriteBackStage;
+void fetch(Instruction *instructions, FetchStage *fetch_stage, int pc) {
+    fetch_stage->pc = (pc < NUM_INSTRUCTIONS) ? pc : -1;
+    fetch_stage->valid = (pc < NUM_INSTRUCTIONS);
+}
+void decode(Instruction *instructions, FetchStage *fetch_stage, DecodeStage *decode_stage) {
+    if (fetch_stage->valid) {
+        int pc = fetch_stage->pc;
+        decode_stage->op1 = instructions[pc].op1;
+        decode_stage->op2 = instructions[pc].op2;
+        decode_stage->operation = instructions[pc].operation;
+        decode_stage->valid = 1;
+    } else {
+        decode_stage->valid = 0;
+    }
+}
+
+void execute(DecodeStage *decode_stage, ExecuteStage *execute_stage) {
+    if (decode_stage->valid) {
+        int op1 = decode_stage->op1;
+        int op2 = decode_stage->op2;
+        char operation = decode_stage->operation;
+
+        switch (operation) {
+            case '+':
+                execute_stage->result = op1 + op2;
+                break;
+            case '-':
+                execute_stage->result = op1 - op2;
+                break;
+            case '*':
+                execute_stage->result = op1 * op2;
+                break;
+            case '/':
+                execute_stage->result = op1 / op2;
+                break;
+            default:
+                execute_stage->result = 0;
+        }
+        execute_stage->valid = 1;
+    } else {
+        execute_stage->valid = 0;
+    }
+}
+
+void write_back(ExecuteStage *execute_stage, WriteBackStage *write_back_stage) {
+    if (execute_stage->valid) {
+        write_back_stage->result = execute_stage->result;
+        write_back_stage->valid = 1;
+    } else {
+        write_back_stage->valid = 0;
+    }
+}
+
+int main() {
+    Instruction instructions[NUM_INSTRUCTIONS] = {
+        {3, 3, '+'},
+        {6, 2, '-'},
+        {3, 7, '*'},
+        {6, 4, '/'},
+        {2, 3, '+'}
+    };
+
+    FetchStage fetch_stage = {0, 0};
+    DecodeStage decode_stage = {0, 0, 0, 0};
+    ExecuteStage execute_stage = {0, 0};
+    WriteBackStage write_back_stage = {0, 0};
+
+    clock_t start, end;
+    double cpu_time_used;
+    start = clock();
+
+    for (int pc = 0; pc <= NUM_INSTRUCTIONS; ++pc) {
+        fetch(instructions, &fetch_stage, pc);
+        decode(instructions, &fetch_stage, &decode_stage);
+        execute(&decode_stage, &execute_stage);
+        write_back(&execute_stage, &write_back_stage);
+        if (write_back_stage.valid) {
+            printf("Instruction %d result: %d\n", pc, write_back_stage.result);
+        }
+    }
+    return EXIT_SUCCESS;
+}
